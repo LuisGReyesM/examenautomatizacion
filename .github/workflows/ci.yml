@@ -1,4 +1,4 @@
-name: Java CI
+name: Java CI with Tests
 
 on:
   push:
@@ -10,40 +10,46 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
+      # 1️⃣ Checkout code
       - uses: actions/checkout@v3
 
+      # 2️⃣ Setup JDK 17
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # 3️⃣ Make Maven wrapper executable
       - name: Make Maven Wrapper Executable
         run: chmod +x ./mvnw
 
+      # 4️⃣ Build project
       - name: Build with Maven
         run: ./mvnw compile
 
+      # 5️⃣ Run Unit Tests (Surefire)
       - name: Run Unit Tests
         run: ./mvnw test
 
+      # 6️⃣ Run Integration Tests (Failsafe)
       - name: Run Integration Tests
         run: ./mvnw verify
 
-      # Reporte Unit Tests
+      # 7️⃣ Report Unit Tests
       - name: Report Unit Tests
         uses: dorny/test-reporter@v2
         if: always()
         with:
           name: Unit Tests
           path: target/surefire-reports/*.xml
-          reporter: java-junit
+          reporter: maven-surefire
 
-      # Reporte Integration Tests
+      # 8️⃣ Report Integration Tests
       - name: Report Integration Tests
         uses: dorny/test-reporter@v2
         if: always()
         with:
           name: Integration Tests
           path: target/failsafe-reports/*.xml
-          reporter: java-junit
+          reporter: maven-failsafe
