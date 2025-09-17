@@ -13,20 +13,16 @@ jobs:
     env:
       IMAGE_NAME: myapp
       VERSION: latest
-      CANARY_NAMESPACE: canary
-      BLUE_NAMESPACE: blue
-      GREEN_NAMESPACE: green
+      CANARY_CONTAINER: canary
+      BLUE_CONTAINER: blue
+      GREEN_CONTAINER: green
+      PORT_CANARY: 8081
+      PORT_GREEN: 8080
     steps:
       # ================================
       # STAGE: Checkout
       # ================================
       - uses: actions/checkout@v3
-
-      # ================================
-      # STAGE: Set up Docker & kubectl
-      # ================================
-      - name: Set up Docker & kubectl
-        uses: docker/setup-buildx-action@v2
 
       # ================================
       # STAGE: Build Docker Image
@@ -41,9 +37,9 @@ jobs:
       # ================================
       - name: Deploy Canary
         run: |
-          echo "Desplegando Canary en namespace $CANARY_NAMESPACE"
-          docker run -d --name canary-$IMAGE_NAME -p 8081:8080 $IMAGE_NAME:$VERSION
-          echo "Simulación de Canary lista"
+          echo "Desplegando Canary..."
+          docker run -d --name $CANARY_CONTAINER -p $PORT_CANARY:8080 $IMAGE_NAME:$VERSION
+          echo "Canary disponible en puerto $PORT_CANARY"
 
       # ================================
       # STAGE: Run Acceptance Tests
@@ -51,11 +47,12 @@ jobs:
       - name: Run Acceptance Tests
         run: |
           echo "Ejecutando Acceptance Tests en Canary"
-          # Simulamos un test HTTP simple
-          if curl -s http://localhost:8081/actuator/health | grep UP; then
+          if curl -s http://localhost:$PORT_CANARY/actuator/health | grep UP; then
             echo "Tests OK"
           else
             echo "Tests fallaron, abortando despliegue"
+            docker stop $CANARY_CONTAINER
+            docker rm $CANARY_CONTAINER
             exit 1
           fi
 
@@ -64,20 +61,28 @@ jobs:
       # ================================
       - name: Deploy Green
         run: |
-          echo "Desplegando versión Green"
-          docker run -d --name green-$IMAGE_NAME -p 8080:8080 $IMAGE_NAME:$VERSION
-          echo "Traffic switch simulado a Green"
-          # Simulación rollback
-          # En caso de falla, se detendría Green y volvería Blue
-          if false; then
-            echo "Rollback activado: volviendo a Blue"
-            docker stop green-$IMAGE_NAME
-            exit 1
+          echo "Deteniendo versión Blue si existe..."
+          if [ "$(docker ps -q -f name=$BLUE_CONTAINER)" ]; then
+            docker stop $BLUE_CONTAINER
+            docker rm $BLUE_CONTAINER
           fi
+
+          echo "Desplegando versión Green"
+          docker run -d --name $GREEN_CONTAINER -p $PORT_GREEN:8080 $IMAGE_NAME:$VERSION
+          echo "Traffic switch simulado a Green"
+
+      # ================================
+      # STAGE: Cleanup Canary
+      # ================================
+      - name: Remove Canary
+        run: |
+          echo "Deteniendo Canary..."
+          docker stop $CANARY_CONTAINER
+          docker rm $CANARY_CONTAINER
 
       # ================================
       # STAGE: Notify
       # ================================
       - name: Notify Team
         run: |
-          echo "Despliegue completado exitosamente o rollback realizado si fue necesario"
+          echo "Despliegue completado exitosamente. Blue-Green switch simulado."
