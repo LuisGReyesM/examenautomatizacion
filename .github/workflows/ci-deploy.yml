@@ -5,6 +5,9 @@ on:
     workflows: ["Java CI"]
     types:
       - completed
+    branches:
+      - ci-deploy
+
 
 jobs:
   deploy:
@@ -43,26 +46,28 @@ jobs:
         run: ls -l target/ExamenAutomatizacion-0.0.1-SNAPSHOT.jar
 
       # ================================
-      # STAGE: Deploy Canary (simulado)
+      # STAGE: Build Docker image
+      # ================================
+      - name: Build Docker image
+        run: docker build -t examen-app:latest .
+
+      # ================================
+      # STAGE: Deploy Canary (real con Docker)
       # ================================
       - name: Deploy Canary
         run: |
-          echo "Simulando despliegue Canary en namespace $CANARY_NAMESPACE"
-          echo "Aplicación desplegada en Canary"
+          echo "Desplegando aplicación en contenedor Docker (Canary)"
+          docker run -d -p 8080:8080 --name examen-canary examen-app:latest
 
       # ================================
-      # STAGE: Run Acceptance Tests (simulado)
+      # STAGE: Run Acceptance Tests (reales contra Canary)
       # ================================
       - name: Run Acceptance Tests
         run: |
-          echo "Ejecutando Acceptance Tests en Canary"
-          TEST_STATUS="UP"
-          if [ "$TEST_STATUS" = "UP" ]; then
-            echo "Tests OK"
-          else
-            echo "Tests fallaron, abortando despliegue"
-            exit 1
-          fi
+          echo "Esperando que el contenedor arranque..."
+          sleep 15
+          echo "Ejecutando pruebas contra Canary"
+          curl -f http://localhost:8080 || (docker logs examen-canary && exit 1)
 
       # ================================
       # STAGE: Deploy Green (simulado)
@@ -77,6 +82,13 @@ jobs:
             echo "Rollback activado: volviendo a Blue"
             exit 1
           fi
+
+      # ================================
+      # STAGE: Stop Canary container
+      # ================================
+      - name: Stop Canary
+        if: always()
+        run: docker rm -f examen-canary || true
 
       # ================================
       # STAGE: Notify
