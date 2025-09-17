@@ -10,11 +10,29 @@ sync-github-repo:
   stage: sync
   image: alpine/git:latest
   script:
-    - git remote add github https://github.com/LuisGReyesM/examenautomatizacion.git
-    - git fetch github
+    # Configuración de git
+    - git config --global user.name "GitLab CI"
+    - git config --global user.email "ci@example.com"
+
+    # Clonar si no existe, si existe hacer fetch
+    - |
+      if [ ! -d ".git" ]; then
+        git clone https://github.com/LuisGReyesM/examenautomatizacion.git .
+      else
+        git remote set-url origin https://github.com/LuisGReyesM/examenautomatizacion.git
+        git fetch origin
+      fi
+
+    # Sincronizar main
     - git checkout main
-    - git reset --hard github/main
-  # Este job se ejecuta solo en la rama "main"
+    - git reset --hard origin/main
+
+    # ==========================================================
+    # Actualizar GitLab usando token directo
+    # ==========================================================
+    - git remote add gitlab https://oauth2:glptt-39c4ca14a1e4d351a132cb6c7aac8d88918cae29@gitlab.com/LuisGReyesM/examenautomatizacion.git
+    - git push gitlab main --force
+
   only:
     - main
 
@@ -25,9 +43,7 @@ build-job:
   stage: build
   image: openjdk:11-jre-slim
   script:
-    - echo "Compilando el proyecto..."
     - ./mvnw compile
-  # Asegura que esta etapa espere a que la de sync termine
   needs:
     - sync-github-repo
 
@@ -38,9 +54,7 @@ unit-test-job:
   stage: test
   image: openjdk:11-jre-slim
   script:
-    - echo "Ejecutando pruebas unitarias..."
     - ./mvnw test
-  # Estas etapas esperan a que la de build termine
   needs:
     - build-job
 
@@ -48,7 +62,6 @@ integration-test-job:
   stage: test
   image: openjdk:11-jre-slim
   script:
-    - echo "Ejecutando pruebas de integración..."
     - ./mvnw verify
   needs:
     - build-job
