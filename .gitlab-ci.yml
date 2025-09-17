@@ -1,9 +1,25 @@
 stages:
+  - sync
   - build
   - test
 
 # ==========================================================
-#                         STAGE BUILD
+#                      STAGE SYNC
+# ==========================================================
+sync-github-repo:
+  stage: sync
+  image: alpine/git:latest
+  script:
+    - git remote add github https://github.com/LuisGReyesM/examenautomatizacion.git
+    - git fetch github
+    - git checkout main
+    - git reset --hard github/main
+  # Este job se ejecuta solo en la rama "main"
+  only:
+    - main
+
+# ==========================================================
+#                      STAGE BUILD
 # ==========================================================
 build-job:
   stage: build
@@ -11,9 +27,12 @@ build-job:
   script:
     - echo "Compilando el proyecto..."
     - ./mvnw compile
+  # Asegura que esta etapa espere a que la de sync termine
+  needs:
+    - sync-github-repo
 
 # ==========================================================
-#                         STAGE TEST
+#                       STAGE TEST
 # ==========================================================
 unit-test-job:
   stage: test
@@ -21,6 +40,9 @@ unit-test-job:
   script:
     - echo "Ejecutando pruebas unitarias..."
     - ./mvnw test
+  # Estas etapas esperan a que la de build termine
+  needs:
+    - build-job
 
 integration-test-job:
   stage: test
@@ -28,3 +50,5 @@ integration-test-job:
   script:
     - echo "Ejecutando pruebas de integración..."
     - ./mvnw verify
+  needs:
+    - build-job
