@@ -18,6 +18,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Make Maven Wrapper Executable
+        run: chmod +x ./mvnw
+
       - name: Build with Maven
         run: ./mvnw compile
 
@@ -34,7 +37,7 @@ jobs:
         with:
           name: Unit Tests
           path: target/surefire-reports/*.xml
-          reporter: junit
+          reporter: java-junit
 
       # Reporte Integration Tests
       - name: Report Integration Tests
@@ -43,4 +46,4 @@ jobs:
         with:
           name: Integration Tests
           path: target/failsafe-reports/*.xml
-          reporter: junit
+          reporter: java-junit
