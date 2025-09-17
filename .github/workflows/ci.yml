@@ -7,32 +7,50 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-      # Clonar el repositorio
+      # ================================
+      # STAGE: Checkout
+      # ================================
       - uses: actions/checkout@v2
 
-      # Configurar JDK
+      # ================================
+      # STAGE: Set up JDK
+      # ================================
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # Compilar el proyecto
+      # ================================
+      # STAGE: Build
+      # ================================
       - name: Build with Maven
         run: mvn -B package --file pom.xml
 
-      # Ejecutar pruebas
-      - name: Run tests
+      # ================================
+      # STAGE: Unit Tests
+      # ================================
+      - name: Run Unit Tests
         run: mvn test
 
-      # Generar reporte HTML
+      # ================================
+      # STAGE: Integration Tests
+      # ================================
+      - name: Run Integration Tests
+        run: mvn verify
+
+      # ================================
+      # STAGE: Generate HTML Report
+      # ================================
       - name: Generate HTML Report
         run: mvn site
 
-      # Subir reporte como artefacto
+      # ================================
+      # STAGE: Upload Artifact
+      # ================================
       - name: Upload HTML Report
         uses: actions/upload-artifact@v4
         with:
