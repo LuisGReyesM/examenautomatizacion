@@ -18,18 +18,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Grant execute permission for Maven Wrapper
-        run: chmod +x mvnw
-
-      - name: Build Project
-        run: ./mvnw compile -B
+      - name: Build with Maven
+        run: mvn -B compile --file pom.xml
 
       - name: Run Unit Tests
-        run: ./mvnw test -B
+        run: mvn -B test --file pom.xml
 
       - name: Run Integration Tests
-        run: ./mvnw verify -B
+        run: mvn -B verify --file pom.xml
 
+      # Reporte Unit Tests
       - name: Report Unit Tests
         uses: dorny/test-reporter@v2
         if: always()
@@ -38,6 +36,7 @@ jobs:
           path: target/surefire-reports/*.xml
           reporter: java-junit
 
+      # Reporte Integration Tests
       - name: Report Integration Tests
         uses: dorny/test-reporter@v2
         if: always()
