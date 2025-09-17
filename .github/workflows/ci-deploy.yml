@@ -5,6 +5,9 @@ on:
     workflows: ["Java CI"]
     types:
       - completed
+    branches:
+      - main
+      - ci-deploy
 
 jobs:
   deploy:
