@@ -30,7 +30,7 @@ sync-github-repo:
     # ==========================================================
     # Actualizar GitLab usando token directo
     # ==========================================================
-    - git remote add gitlab https://oauth2:glptt-39c4ca14a1e4d351a132cb6c7aac8d88918cae29@gitlab.com/LuisGReyesM/examenautomatizacion.git
+    - git remote add gitlab https://USERNAME:${GITLAB_TOKEN}@gitlab.com/LuisGReyesM/examenautomatizacion.git
     - git push gitlab main --force
 
   only:
