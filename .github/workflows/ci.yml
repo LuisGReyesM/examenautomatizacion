@@ -10,33 +10,26 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Clonar el repositorio
       - uses: actions/checkout@v3
 
-      # 2️⃣ Configurar JDK 17
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3️⃣ Dar permisos al Maven Wrapper
       - name: Grant execute permission for Maven Wrapper
         run: chmod +x mvnw
 
-      # 4️⃣ Compilar el proyecto
       - name: Build with Maven
         run: ./mvnw compile
 
-      # 5️⃣ Ejecutar pruebas unitarias
       - name: Run Unit Tests
         run: ./mvnw test
 
-      # 6️⃣ Ejecutar pruebas de integración
       - name: Run Integration Tests
         run: ./mvnw verify
 
-      # 7️⃣ Subir reportes de pruebas como artifacts
       - name: Upload Test Reports
         uses: actions/upload-artifact@v4
         with:
@@ -45,14 +38,14 @@ jobs:
             target/surefire-reports/
             target/failsafe-reports/
 
-      # 8️⃣ Mostrar resultados de tests en los logs
+
       - name: Report Unit Tests
         uses: dorny/test-reporter@v2
         if: always()
         with:
           name: Unit Tests
           path: target/surefire-reports/*.xml
-          reporter: junit
+          reporter: junit-xml
           fail-on-error: true
 
       - name: Report Integration Tests
@@ -61,5 +54,5 @@ jobs:
         with:
           name: Integration Tests
           path: target/failsafe-reports/*.xml
-          reporter: junit
+          reporter: junit-xml
           fail-on-error: true
