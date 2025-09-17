@@ -39,6 +39,12 @@ jobs:
         run: mvn -B package --file pom.xml
 
       # ================================
+      # STAGE: Verify JAR
+      # ================================
+      - name: Verify JAR exists
+        run: ls -l target/ExamenAutomatizacion-0.0.1-SNAPSHOT.jar
+
+      # ================================
       # STAGE: Set up Docker
       # ================================
       - name: Set up Docker
@@ -95,3 +101,4 @@ jobs:
       - name: Notify Team
         run: |
           echo "Despliegue completado exitosamente o rollback realizado si fue necesario"
+
