@@ -19,28 +19,28 @@ jobs:
           distribution: 'temurin'
 
       - name: Build with Maven
-        run: mvn -B compile --file pom.xml
+        run: ./mvnw compile
 
       - name: Run Unit Tests
-        run: mvn -B test --file pom.xml
+        run: ./mvnw test
 
       - name: Run Integration Tests
-        run: mvn -B verify --file pom.xml
+        run: ./mvnw verify
 
       # Reporte Unit Tests
       - name: Report Unit Tests
-        uses: dorny/test-reporter@v2
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Unit Tests
           path: target/surefire-reports/*.xml
-          reporter: java-junit
+          reporter: junit
 
       # Reporte Integration Tests
       - name: Report Integration Tests
-        uses: dorny/test-reporter@v2
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Integration Tests
           path: target/failsafe-reports/*.xml
-          reporter: java-junit
+          reporter: junit
