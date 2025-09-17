@@ -1,0 +1,30 @@
+stages:
+  - build
+  - test
+
+# ==========================================================
+#                         STAGE BUILD
+# ==========================================================
+build-job:
+  stage: build
+  image: openjdk:11-jre-slim
+  script:
+    - echo "Compilando el proyecto..."
+    - ./mvnw compile
+
+# ==========================================================
+#                         STAGE TEST
+# ==========================================================
+unit-test-job:
+  stage: test
+  image: openjdk:11-jre-slim
+  script:
+    - echo "Ejecutando pruebas unitarias..."
+    - ./mvnw test
+
+integration-test-job:
+  stage: test
+  image: openjdk:11-jre-slim
+  script:
+    - echo "Ejecutando pruebas de integración..."
+    - ./mvnw verify
