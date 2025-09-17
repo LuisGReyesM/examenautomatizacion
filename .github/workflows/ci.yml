@@ -1,4 +1,4 @@
-name: Java CI
+name: Java CI Quick
 
 on:
   push:
@@ -21,22 +21,14 @@ jobs:
       - name: Grant execute permission for Maven Wrapper
         run: chmod +x mvnw
 
-      - name: Build with Maven
-        run: ./mvnw compile
+      - name: Build Project
+        run: ./mvnw compile -B
 
       - name: Run Unit Tests
-        run: ./mvnw test
+        run: ./mvnw test -B
 
       - name: Run Integration Tests
-        run: ./mvnw verify
-
-      - name: Upload Test Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: |
-            target/surefire-reports/
-            target/failsafe-reports/
+        run: ./mvnw verify -B
 
       - name: Report Unit Tests
         uses: dorny/test-reporter@v2
