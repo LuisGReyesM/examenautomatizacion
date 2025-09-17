@@ -7,7 +7,7 @@ WORKDIR /app
 # Copiar archivos de la aplicación
 COPY target/ExamenAutomatizacion-0.0.1-SNAPSHOT.jar app.jar
 
-# Exponer puerto
+# Exponer puertos
 EXPOSE 8080
 
 # Comando para ejecutar la app
