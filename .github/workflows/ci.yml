@@ -1,4 +1,4 @@
-name: Java CI Quick
+name: Java CI
 
 on:
   push:
@@ -10,48 +10,42 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-      # 1️⃣ Checkout code
+      # Clonar el repositorio
       - uses: actions/checkout@v3
 
-      # 2️⃣ Setup JDK 17
+      # Configurar JDK 17
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3️⃣ Make Maven Wrapper Executable
-      - name: Make Maven Wrapper Executable
-        run: chmod +x ./mvnw
-
-      # 4️⃣ Build project
+      # Compilar el proyecto
       - name: Build with Maven
-        run: ./mvnw compile -B
+        run: ./mvnw compile
 
-      # 5️⃣ Run Unit Tests (Surefire)
+      # Ejecutar pruebas unitarias
       - name: Run Unit Tests
-        run: ./mvnw test -B
+        run: ./mvnw test
 
-      # 6️⃣ Run Integration Tests (Failsafe)
+      # Ejecutar pruebas de integración
       - name: Run Integration Tests
-        run: ./mvnw verify -B
+        run: ./mvnw verify
 
-      # 7️⃣ Report Unit Tests Summary
-      - name: Report Unit Tests
-        uses: dorny/test-reporter@v2
-        if: always()
-        with:
-          name: Unit Tests
-          path: target/surefire-reports/*.xml
-          reporter: maven-surefire
-          only-summary: true
+      # Generar reporte HTML completo
+      - name: Generate HTML Report
+        run: ./mvnw site
 
-      # 8️⃣ Report Integration Tests Summary
-      - name: Report Integration Tests
-        uses: dorny/test-reporter@v2
-        if: always()
+      # Subir reporte de pruebas unitarias
+      - name: Upload Unit Test Report
+        uses: actions/upload-artifact@v4
         with:
-          name: Integration Tests
-          path: target/failsafe-reports/*.xml
-          reporter: maven-failsafe
-          only-summary: true
+          name: junit-html-unit
+          path: target/site/surefire-report.html
+
+      # Subir reporte de pruebas de integración
+      - name: Upload Integration Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-html-integration
+          path: target/site/failsafe-report.html
