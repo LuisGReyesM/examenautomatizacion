@@ -29,7 +29,7 @@ jobs:
 
       # Reporte Unit Tests
       - name: Report Unit Tests
-        uses: dorny/test-reporter@v3
+        uses: dorny/test-reporter@v2
         if: always()
         with:
           name: Unit Tests
@@ -38,7 +38,7 @@ jobs:
 
       # Reporte Integration Tests
       - name: Report Integration Tests
-        uses: dorny/test-reporter@v3
+        uses: dorny/test-reporter@v2
         if: always()
         with:
           name: Integration Tests
