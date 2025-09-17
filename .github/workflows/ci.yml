@@ -1,4 +1,4 @@
-name: Java CI with Tests
+name: Java CI Quick
 
 on:
   push:
@@ -20,23 +20,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # 3️⃣ Make Maven wrapper executable
+      # 3️⃣ Make Maven Wrapper Executable
       - name: Make Maven Wrapper Executable
         run: chmod +x ./mvnw
 
       # 4️⃣ Build project
       - name: Build with Maven
-        run: ./mvnw compile
+        run: ./mvnw compile -B
 
       # 5️⃣ Run Unit Tests (Surefire)
       - name: Run Unit Tests
-        run: ./mvnw test
+        run: ./mvnw test -B
 
       # 6️⃣ Run Integration Tests (Failsafe)
       - name: Run Integration Tests
-        run: ./mvnw verify
+        run: ./mvnw verify -B
 
-      # 7️⃣ Report Unit Tests
+      # 7️⃣ Report Unit Tests Summary
       - name: Report Unit Tests
         uses: dorny/test-reporter@v2
         if: always()
@@ -44,8 +44,9 @@ jobs:
           name: Unit Tests
           path: target/surefire-reports/*.xml
           reporter: maven-surefire
+          only-summary: true
 
-      # 8️⃣ Report Integration Tests
+      # 8️⃣ Report Integration Tests Summary
       - name: Report Integration Tests
         uses: dorny/test-reporter@v2
         if: always()
@@ -53,3 +54,4 @@ jobs:
           name: Integration Tests
           path: target/failsafe-reports/*.xml
           reporter: maven-failsafe
+          only-summary: true
