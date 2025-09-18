@@ -62,15 +62,37 @@ jobs:
       # ================================
       # STAGE: Run Acceptance Tests (reales contra Canary)
       # ===============================
+      # ================================
+      # STAGE: Run Acceptance Tests
+      # ================================
       - name: Run Acceptance Tests
         run: |
-          echo "Ejecutando Acceptance Tests en Canary"
-          if curl -s http://localhost:8081/actuator/health | grep UP; then
-            echo "Tests OK"
+          echo "Ejecutando Acceptance Tests directamente en GitHub Actions"
+
+          # Levantar la aplicación en segundo plano
+          java -jar target/ExamenAutomatizacion-0.0.1-SNAPSHOT.jar &
+          APP_PID=$!
+          echo "Aplicación iniciada con PID $APP_PID"
+
+          # Esperar a que arranque (puedes ajustar los segundos si tu app tarda más)
+          echo "Esperando que la aplicación arranque..."
+          sleep 10
+
+          # Ejecutar test de health
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health)
+          if [ "$STATUS_CODE" -eq 200 ]; then
+            echo "Tests OK: /actuator/health responde correctamente"
           else
-            echo "Tests fallaron, abortando despliegue"
+            echo "Tests fallaron: /actuator/health devolvió código $STATUS_CODE"
+            kill $APP_PID
             exit 1
           fi
+
+          # Terminar la aplicación
+          kill $APP_PID
+          echo "Aplicación detenida tras pruebas"
+      
+      
 
       # ================================
       # STAGE: Deploy Green (simulado)
