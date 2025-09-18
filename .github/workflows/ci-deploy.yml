@@ -61,7 +61,7 @@ jobs:
 
       # ================================
       # STAGE: Run Acceptance Tests (reales contra Canary)
-      # ================================
+      # ===============================
       - name: Run Acceptance Tests
         run: |
           echo "Ejecutando Acceptance Tests en Canary"
