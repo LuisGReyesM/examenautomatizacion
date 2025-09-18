@@ -60,21 +60,18 @@ jobs:
           docker run -d -p 8080:8080 --name examen-canary examen-app:latest
 
       # ================================
-      # STAGE: Run Acceptance Tests (reales contra Canary)
-      # ===============================
-      # ================================
       # STAGE: Run Acceptance Tests
       # ================================
       - name: Run Acceptance Tests
         run: |
           echo "Ejecutando Acceptance Tests directamente en GitHub Actions"
 
-          # Levantar la aplicación en segundo plano
+      # Levantar la aplicación en segundo plano
           java -jar target/ExamenAutomatizacion-0.0.1-SNAPSHOT.jar &
           APP_PID=$!
           echo "Aplicación iniciada con PID $APP_PID"
 
-          # Esperar hasta que /actuator/health devuelva 200
+      # Esperar hasta que /actuator/health devuelva 200
           echo "Esperando que la aplicación esté lista..."
           for i in {1..30}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
@@ -85,7 +82,7 @@ jobs:
             sleep 2
           done
 
-          # Verificar al final si está lista
+      # Verificar al final si está lista
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
           if [ "$STATUS" -ne 200 ]; then
             echo "Tests fallaron: /actuator/health no respondió con 200"
@@ -96,9 +93,7 @@ jobs:
           echo "Tests OK"
           kill $APP_PID
           echo "Aplicación detenida tras pruebas"
-      
-      
-      
+
 
       # ================================
       # STAGE: Deploy Green (simulado)
@@ -107,7 +102,7 @@ jobs:
         run: |
           echo "Simulando despliegue Green en namespace $GREEN_NAMESPACE"
           echo "Traffic switch simulado a Green"
-          # Simulación rollback
+      # Simulación rollback
           ROLLBACK=false
           if [ "$ROLLBACK" = true ]; then
             echo "Rollback activado: volviendo a Blue"
