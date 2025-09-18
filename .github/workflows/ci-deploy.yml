@@ -1,5 +1,5 @@
 name: Deployment Pipeline
-# ================================
+
 on:
   workflow_run:
     workflows: ["Java CI"]
@@ -7,7 +7,6 @@ on:
       - completed
     branches:
       - ci-deploy
-
 
 jobs:
   deploy:
@@ -17,6 +16,8 @@ jobs:
       CANARY_NAMESPACE: canary
       BLUE_NAMESPACE: blue
       GREEN_NAMESPACE: green
+      IMAGE_NAME: examen-app
+      VERSION: latest
 
     steps:
       # ================================
@@ -49,30 +50,22 @@ jobs:
       # STAGE: Build Docker image
       # ================================
       - name: Build Docker image
-        run: docker build -t examen-app:latest .
+        run: docker build -t $IMAGE_NAME:$VERSION .
 
       # ================================
-      # STAGE: Deploy Canary (real con Docker)
+      # STAGE: Deploy Canary
       # ================================
       - name: Deploy Canary
         run: |
           echo "Desplegando aplicación en contenedor Docker (Canary)"
-          docker run -d -p 8080:8080 --name examen-canary examen-app:latest
+          docker run -d -p 8080:8080 --name ${IMAGE_NAME}-canary $IMAGE_NAME:$VERSION
 
       # ================================
       # STAGE: Run Acceptance Tests
       # ================================
       - name: Run Acceptance Tests
         run: |
-          echo "Ejecutando Acceptance Tests directamente en GitHub Actions"
-
-      # Levantar la aplicación en segundo plano
-          java -jar target/ExamenAutomatizacion-0.0.1-SNAPSHOT.jar &
-          APP_PID=$!
-          echo "Aplicación iniciada con PID $APP_PID"
-
-      # Esperar hasta que /actuator/health devuelva 200
-          echo "Esperando que la aplicación esté lista..."
+          echo "Esperando que la aplicación esté lista en Canary..."
           for i in {1..30}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
             if [ "$STATUS" -eq 200 ]; then
@@ -82,18 +75,15 @@ jobs:
             sleep 2
           done
 
-      # Verificar al final si está lista
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
           if [ "$STATUS" -ne 200 ]; then
             echo "Tests fallaron: /actuator/health no respondió con 200"
-            kill $APP_PID
+            docker logs ${IMAGE_NAME}-canary
+            docker rm -f ${IMAGE_NAME}-canary
             exit 1
           fi
 
-          echo "Tests OK"
-          kill $APP_PID
-          echo "Aplicación detenida tras pruebas"
-
+          echo "Tests OK en Canary"
 
       # ================================
       # STAGE: Deploy Green (simulado)
@@ -102,7 +92,6 @@ jobs:
         run: |
           echo "Simulando despliegue Green en namespace $GREEN_NAMESPACE"
           echo "Traffic switch simulado a Green"
-      # Simulación rollback
           ROLLBACK=false
           if [ "$ROLLBACK" = true ]; then
             echo "Rollback activado: volviendo a Blue"
@@ -114,7 +103,7 @@ jobs:
       # ================================
       - name: Stop Canary
         if: always()
-        run: docker rm -f examen-canary || true
+        run: docker rm -f ${IMAGE_NAME}-canary || true
 
       # ================================
       # STAGE: Notify
