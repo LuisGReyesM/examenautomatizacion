@@ -74,23 +74,29 @@ jobs:
           APP_PID=$!
           echo "Aplicación iniciada con PID $APP_PID"
 
-          # Esperar a que arranque (puedes ajustar los segundos si tu app tarda más)
-          echo "Esperando que la aplicación arranque..."
-          sleep 10
+          # Esperar hasta que /actuator/health devuelva 200
+          echo "Esperando que la aplicación esté lista..."
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Aplicación lista!"
+              break
+            fi
+            sleep 2
+          done
 
-          # Ejecutar test de health
-          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health)
-          if [ "$STATUS_CODE" -eq 200 ]; then
-            echo "Tests OK: /actuator/health responde correctamente"
-          else
-            echo "Tests fallaron: /actuator/health devolvió código $STATUS_CODE"
+          # Verificar al final si está lista
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/health || true)
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Tests fallaron: /actuator/health no respondió con 200"
             kill $APP_PID
             exit 1
           fi
 
-          # Terminar la aplicación
+          echo "Tests OK"
           kill $APP_PID
           echo "Aplicación detenida tras pruebas"
+      
       
       
 
