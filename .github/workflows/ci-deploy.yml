@@ -64,10 +64,8 @@ jobs:
       # ================================
       - name: Run Acceptance Tests
         run: |
-          echo "Esperando que el contenedor arranque..."
-          sleep 10
-          echo "Ejecutando pruebas contra Canary"
-          if curl -s http://localhost:8081/ | grep "<html>"; then
+          echo "Ejecutando Acceptance Tests en Canary"
+          if curl -s http://localhost:8081/actuator/health | grep UP; then
             echo "Tests OK"
           else
             echo "Tests fallaron, abortando despliegue"
