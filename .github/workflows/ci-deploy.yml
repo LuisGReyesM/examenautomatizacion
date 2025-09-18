@@ -62,7 +62,7 @@ jobs:
 
       # ================================
       # STAGE: Run Acceptance Tests
-      # ================================
+      # =================================
       - name: Run Acceptance Tests
         run: |
           echo "Esperando que la aplicación esté lista en Canary..."
