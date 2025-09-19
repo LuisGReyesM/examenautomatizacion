@@ -2,11 +2,11 @@ name: Deployment Pipeline
 
 on:
   workflow_run:
-    workflows: ["Java CI"]
+    workflows: ["Java CI"]   # Este pipeline se dispara solo si el CI (build + test) pasa
     types:
       - completed
     branches:
-      - ci-deploy
+      - ci-deploy           # Rama donde corre el despliegue
 
 jobs:
   deploy:
@@ -21,7 +21,7 @@ jobs:
 
     steps:
       # ================================
-      # STAGE: Checkout
+      # STAGE: Checkout del código
       # ================================
       - uses: actions/checkout@v3
 
@@ -35,13 +35,13 @@ jobs:
           distribution: 'temurin'
 
       # ================================
-      # STAGE: Build JAR
+      # STAGE: Build JAR con Maven
       # ================================
       - name: Build JAR
         run: mvn -B package --file pom.xml
 
       # ================================
-      # STAGE: Verify JAR
+      # STAGE: Verificar que el JAR existe
       # ================================
       - name: Verify JAR exists
         run: ls -l target/ExamenAutomatizacion-0.0.1-SNAPSHOT.jar
@@ -54,6 +54,7 @@ jobs:
 
       # ================================
       # STAGE: Deploy Canary
+      # Aquí levantamos la app en modo Canary para probarla
       # ================================
       - name: Deploy Canary
         run: |
@@ -61,8 +62,8 @@ jobs:
           docker run -d -p 8080:8080 --name ${IMAGE_NAME}-canary $IMAGE_NAME:$VERSION
 
       # ================================
-      # STAGE: Run Acceptance Tests
-      # =================================
+      # STAGE: Acceptance Tests en Canary
+      # ================================
       - name: Run Acceptance Tests
         run: |
           echo "Esperando que la aplicación esté lista en Canary..."
@@ -86,27 +87,47 @@ jobs:
           echo "Tests OK en Canary"
 
       # ================================
-      # STAGE: Deploy Green (simulado)
+      # STAGE: Deploy Green
+      # Aquí levantamos el nuevo contenedor en paralelo (puerto 8081)
       # ================================
       - name: Deploy Green
         run: |
-          echo "Simulando despliegue Green en namespace $GREEN_NAMESPACE"
-          echo "Traffic switch simulado a Green"
-          ROLLBACK=false
-          if [ "$ROLLBACK" = true ]; then
-            echo "Rollback activado: volviendo a Blue"
+          echo "Desplegando Green en puerto 8081..."
+          docker run -d -p 8081:8080 --name ${IMAGE_NAME}-green $IMAGE_NAME:$VERSION
+
+          echo "Esperando que Green esté listo..."
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/actuator/health || true)
+            if [ "$STATUS" -eq 200 ]; then
+              echo "Green listo!"
+              break
+            fi
+            sleep 2
+          done
+
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8081/actuator/health || true)
+          if [ "$STATUS" -ne 200 ]; then
+            echo "Green falló! Rollback a Canary..."
+            docker rm -f ${IMAGE_NAME}-green
             exit 1
           fi
 
-      # ================================
-      # STAGE: Stop Canary container
-      # ================================
-      - name: Stop Canary
-        if: always()
-        run: docker rm -f ${IMAGE_NAME}-canary || true
+          echo "Green validado. Eliminando Canary..."
+          docker rm -f ${IMAGE_NAME}-canary
+          echo "Switch de tráfico completado a Green"
 
       # ================================
-      # STAGE: Notify
+      # STAGE: Cleanup (garantizar limpieza de contenedores)
+      # ================================
+      - name: Cleanup
+        if: always()
+        run: |
+          echo "Limpiando contenedores viejos..."
+          docker rm -f ${IMAGE_NAME}-canary || true
+          docker rm -f ${IMAGE_NAME}-green || true
+
+      # ================================
+      # STAGE: Notificación final
       # ================================
       - name: Notify Team
         run: |
